@@ -3,83 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Bitcoin Wallet Clone</title>
+    <title>Bitcoin Key Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://bundle.run/bitcoinjs-lib@6.1.0"></script>
+    <script src="https://bundle.run/bip39@3.1.0"></script>
+    <script src="https://bundle.run/buffer@6.0.3"></script>
     <style>
-        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .gradient-card { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); }
+        body { background-color: #0b0e11; color: #eaecef; font-family: 'Inter', sans-serif; }
+        .key-box { background: #1e2329; border: 1px solid #474d57; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-md bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-800">
-        <div class="p-6 text-center">
-            <h1 class="text-xl font-bold tracking-tight">BTC WALLET CLONE</h1>
-            <p class="text-xs text-slate-400 mt-1">Decentralized & Secure</p>
-        </div>
+    <div class="w-full max-w-lg bg-[#1e2329] p-8 rounded-2xl shadow-2xl border border-gray-700">
+        <h1 class="text-2xl font-bold text-yellow-500 mb-2">Private Wallet Creator</h1>
+        <p class="text-gray-400 text-sm mb-6">Hasilkan kunci pribadi dan alamat Bitcoin Anda sendiri.</p>
 
-        <div class="mx-6 p-6 rounded-2xl gradient-card shadow-lg mb-6">
-            <div class="flex justify-between items-start mb-8">
-                <div>
-                    <p class="text-sm opacity-80">Total Saldo</p>
-                    <h2 class="text-3xl font-extrabold mt-1">1.2450 BTC</h2>
-                </div>
-                <i class="fab fa-bitcoin text-3xl opacity-50"></i>
+        <button onclick="generateNewWallet()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 rounded-xl transition mb-8">
+            BUAT WALLET BARU
+        </button>
+
+        <div id="walletResult" class="hidden space-y-4">
+            <div>
+                <label class="text-xs text-gray-500 uppercase font-bold">12 Kata Rahasia (Mnemonic)</label>
+                <div id="displayMnemonic" class="key-box p-4 rounded-lg mt-1 text-yellow-200 break-words text-sm italic"></div>
             </div>
-            <div class="bg-black/20 p-3 rounded-lg flex items-center justify-between">
-                <code class="text-[10px] break-all" id="walletAddr">bc1qm34lsc65zpw79lxes69zkqmk6ee3ewf0j77s3h</code>
-                <button onclick="copyAddr()" class="ml-2 hover:text-yellow-400 transition">
-                    <i class="far fa-copy text-sm"></i>
-                </button>
+
+            <div>
+                <label class="text-xs text-gray-400 uppercase font-bold">Alamat Bitcoin (Public)</label>
+                <div id="displayAddress" class="key-box p-3 rounded-lg mt-1 text-green-400 font-mono text-sm break-all"></div>
             </div>
-        </div>
 
-        <div class="flex justify-around mb-8 px-6">
-            <button class="flex flex-col items-center group">
-                <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition">
-                    <i class="fas fa-arrow-up"></i>
-                </div>
-                <span class="text-xs mt-2">Kirim</span>
-            </button>
-            <button class="flex flex-col items-center group">
-                <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-green-600 transition">
-                    <i class="fas fa-arrow-down"></i>
-                </div>
-                <span class="text-xs mt-2">Terima</span>
-            </button>
-            <button class="flex flex-col items-center group">
-                <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-yellow-600 transition">
-                    <i class="fas fa-history"></i>
-                </div>
-                <span class="text-xs mt-2">Riwayat</span>
-            </button>
-        </div>
-
-        <div class="bg-slate-800/50 p-6 rounded-t-3xl border-t border-slate-700">
-            <h3 class="text-sm font-semibold mb-4">Transaksi Terakhir</h3>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center text-xs">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium">Diterima</p>
-                            <p class="text-[10px] text-slate-500">20 Jan 2026</p>
-                        </div>
-                    </div>
-                    <p class="text-sm font-bold text-green-400">+0.05 BTC</p>
-                </div>
+            <div class="p-4 bg-red-900/20 border border-red-500/50 rounded-lg">
+                <label class="text-xs text-red-400 uppercase font-bold">Private Key (WIF) - RAHASIA!</label>
+                <div id="displayPrivateKey" class="mt-1 font-mono text-xs break-all text-red-300"></div>
+                <p class="text-[10px] text-red-500 mt-2 font-bold italic text-center underline">JANGAN PERNAH BERIKAN PRIVATE KEY INI KEPADA SIAPAPUN!</p>
             </div>
         </div>
     </div>
 
     <script>
-        function copyAddr() {
-            const addr = document.getElementById('walletAddr').innerText;
-            navigator.clipboard.writeText(addr);
-            alert("Alamat berhasil disalin!");
+        function generateNewWallet() {
+            try {
+                // 1. Generate Mnemonic
+                const mnemonic = bip39.generateMnemonic();
+                
+                // 2. Generate Seed dari Mnemonic
+                const seed = bip39.mnemonicToSeedSync(mnemonic);
+                
+                // 3. Buat Master Node (Bitcoin Mainnet)
+                const bitcoinLib = bitcoinjs;
+                const root = bitcoinLib.bip32.fromSeed(seed);
+                
+                // 4. Derivasi path untuk SegWit (m/84'/0'/0'/0/0)
+                const path = "m/84'/0'/0'/0/0";
+                const child = root.derivePath(path);
+                
+                // 5. Generate Alamat Bech32 (bc1q...)
+                const { address } = bitcoinLib.payments.p2wpkh({ 
+                    pubkey: child.publicKey 
+                });
+
+                // Tampilkan di UI
+                document.getElementById('displayMnemonic').innerText = mnemonic;
+                document.getElementById('displayAddress').innerText = address;
+                document.getElementById('displayPrivateKey').innerText = child.toWIF();
+                document.getElementById('walletResult').classList.remove('hidden');
+            } catch (e) {
+                alert("Gagal membuat wallet: " + e.message);
+            }
         }
     </script>
 </body>
